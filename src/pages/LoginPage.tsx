@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { LogIn } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { Role } from '../types/auth';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -9,14 +10,31 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
+
+  const handleNavigate = (role: Role | 'unauthorized') => {
+    navigate(`/${role}`, { replace: true });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await login(email, password);
-      const from = (location.state as any)?.from?.pathname || '/';
-      navigate(from, { replace: true });
+
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const role = user.role;
+
+      if (role === 'admin') {
+        handleNavigate('admin');
+      } else if (role === 'member') {
+        handleNavigate('member');
+      } else if (role === 'client') {
+        handleNavigate('client');
+      } else {
+        handleNavigate('unauthorized');
+      }
+
+      // const from = (location.state as any)?.from?.pathname || '/';
+      // navigate(from, { replace: true });
     } catch (err) {
       setError('Invalid credentials');
     }
@@ -28,8 +46,10 @@ export const LoginPage: React.FC = () => {
         <div className="flex justify-center mb-6">
           <LogIn className="h-12 w-12 text-blue-600" />
         </div>
-        <h2 className="text-center text-3xl font-bold text-gray-900 mb-6">Sign in</h2>
-        
+        <h2 className="text-center text-3xl font-bold text-gray-900 mb-6">
+          Sign in
+        </h2>
+
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
@@ -38,28 +58,34 @@ export const LoginPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700"
+            >
               Email
             </label>
             <input
               id="email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700"
+            >
               Password
             </label>
             <input
               id="password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
             />
